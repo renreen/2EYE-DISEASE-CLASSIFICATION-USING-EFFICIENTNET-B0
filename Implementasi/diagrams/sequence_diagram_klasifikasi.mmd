@@ -1,0 +1,70 @@
+sequenceDiagram
+    actor User
+    participant Sistem as Sistem Klasifikasi Penyakit Mata
+    participant PP as Modul Preprocessing
+    participant Model as Model EfficientNet-B0
+
+    User->>Sistem: Mengakses halaman klasifikasi
+    activate Sistem
+    Sistem->>Model: Memuat model dari session state
+    activate Model
+    Model-->>Sistem: Model yang telah dipilih (RGB, LAB, YCbCr)
+    deactivate Model
+    Sistem-->>User: Menampilkan halaman klasifikasi
+    deactivate Sistem
+
+    Note over User, Sistem: <<include>> Mengunggah Citra Fundus
+
+    User->>Sistem: Memilih tipe file Image
+    activate Sistem
+    Sistem-->>User: Menampilkan uploader file gambar
+    deactivate Sistem
+
+    User->>Sistem: Mengunggah file gambar
+    activate Sistem
+    Sistem->>Sistem: Validasi file (format JPG/JPEG/PNG, ukuran ≤ 2MB)
+
+    alt File tidak valid
+        Sistem-->>User: Menampilkan pesan error
+    else File valid
+        Sistem-->>User: Menampilkan preview gambar
+        Sistem-->>User: Menampilkan citra yang diunggah
+    end
+    deactivate Sistem
+
+    User->>Sistem: Menekan tombol "Mulai Klasifikasi"
+    activate Sistem
+
+    Note over Sistem, PP: <<include>> Menerapkan Pra-pengolahan CLAHE
+
+    Sistem->>PP: Mengirim file gambar
+    activate PP
+    PP->>PP: Decode bytes ke array numpy
+    PP->>PP: Resize citra ke 224×224
+    PP->>PP: Menerapkan CLAHE pada saluran Green (RGB)
+    PP->>PP: Menerapkan CLAHE pada saluran L (CIE Lab)
+    PP->>PP: Menerapkan CLAHE pada saluran Y (YCbCr)
+    PP-->>Sistem: Mengembalikan hasil pra-pengolahan (Asli, RGB, LAB, YCbCr)
+    deactivate PP
+
+    Sistem-->>User: Menampilkan perbandingan citra (Asli vs Hasil CLAHE)
+    Sistem-->>User: Menampilkan grafik histogram citra
+
+    Note over Sistem, Model: Proses Klasifikasi
+
+    loop Untuk setiap skenario (RGB, LAB, YCbCr)
+        Sistem->>PP: Menyiapkan tensor untuk model
+        activate PP
+        PP-->>Sistem: Tensor gambar (1, 224, 224, 3)
+        deactivate PP
+        Sistem->>Model: Melakukan prediksi dengan model skenario
+        activate Model
+        Model-->>Sistem: Probabilitas 4 kelas (DR, Glaukoma, Katarak, Normal)
+        deactivate Model
+        Sistem->>Sistem: Menentukan kelas prediksi dan confidence
+    end
+
+    Sistem-->>User: Menampilkan hasil klasifikasi 3 skenario
+    Sistem-->>User: Menampilkan diagnosis dan confidence tiap skenario
+    Sistem-->>User: Menampilkan detail probabilitas 4 kelas
+    deactivate Sistem

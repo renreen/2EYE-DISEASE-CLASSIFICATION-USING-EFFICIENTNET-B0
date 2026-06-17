@@ -1,0 +1,68 @@
+sequenceDiagram
+    actor Peneliti
+    participant Sistem as Sistem Klasifikasi Penyakit Mata
+    participant Dataset as Dataset Citra Fundus
+    participant TF as TensorFlow/Keras
+    participant Model as EfficientNet-B0
+
+    Peneliti->>Sistem: Mengakses sistem untuk membangun model
+    activate Sistem
+
+    Peneliti->>Dataset: Menyiapkan dataset citra fundus
+    activate Dataset
+    Dataset-->>Peneliti: Dataset siap (4 kelas: DR, Glaukoma, Katarak, Normal)
+    deactivate Dataset
+
+    Peneliti->>Sistem: Membagi dataset (Training, Validation, Testing)
+    activate Sistem
+    Sistem-->>Peneliti: Dataset terbagi
+    deactivate Sistem
+
+    Peneliti->>Sistem: Menentukan skenario ruang warna
+    activate Sistem
+    Sistem-->>Peneliti: 3 Skenario (RGB, CIE Lab, YCbCr)
+    deactivate Sistem
+
+    Peneliti->>Sistem: Menerapkan pra-pengolahan CLAHE pada dataset
+    activate Sistem
+    Sistem->>Sistem: CLAHE pada saluran Green (RGB)
+    Sistem->>Sistem: CLAHE pada saluran L (CIE Lab)
+    Sistem->>Sistem: CLAHE pada saluran Y (YCbCr)
+    Sistem-->>Peneliti: Dataset telah melalui pra-pengolahan
+    deactivate Sistem
+
+    Peneliti->>TF: Membangun arsitektur model EfficientNet-B0
+    activate TF
+    TF->>Model: Inisialisasi EfficientNet-B0 (input 224×224×3)
+    activate Model
+    Model-->>TF: Arsitektur model terbentuk
+    deactivate Model
+    TF-->>Peneliti: Model siap untuk dilatih
+    deactivate TF
+
+    loop Untuk setiap skenario (RGB, LAB, YCbCr)
+        Peneliti->>TF: Melatih model dengan dataset skenario
+        activate TF
+        TF->>Model: Training (epoch, batch_size, optimizer)
+        activate Model
+        Model-->>TF: Hasil training (loss, accuracy)
+        deactivate Model
+        TF-->>Peneliti: Model terlatih untuk skenario
+        deactivate TF
+
+        Peneliti->>TF: Mengevaluasi model
+        activate TF
+        TF->>Model: Evaluasi dengan data testing
+        activate Model
+        Model-->>TF: Metrik evaluasi (accuracy, precision, recall, f1-score)
+        deactivate Model
+        TF-->>Peneliti: Hasil evaluasi model
+        deactivate TF
+
+        Peneliti->>Sistem: Menyimpan model terbaik (.h5)
+        activate Sistem
+        Sistem-->>Peneliti: Model tersimpan (model_best_[skenario].h5)
+        deactivate Sistem
+    end
+
+    deactivate Sistem

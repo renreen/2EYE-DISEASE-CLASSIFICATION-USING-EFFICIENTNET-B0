@@ -1,0 +1,103 @@
+classDiagram
+    class SistemKlasifikasiPenyakitMata {
+        -String page_title
+        -String layout
+        -List~String~ CLASSES
+        -Dict~String, Model~ models
+        +set_page_config()
+        +load_all_models() Dict~String, Model~
+        +tampilkan_halaman()
+        +validasi_file(uploaded_file) bool
+        +mulai_klasifikasi()
+        +tampilkan_perbandingan_citra(images)
+        +tampilkan_histogram(images)
+        +tampilkan_hasil_klasifikasi(predictions)
+    }
+
+    class SessionState {
+        -bytes image_buffer
+        -Dict processed_images
+        -bool is_classified
+        -Dict predictions
+        +simpan_image_buffer(bytes)
+        +simpan_processed_images(Dict)
+        +simpan_predictions(Dict)
+        +set_is_classified(bool)
+        +get_image_buffer() bytes
+        +get_processed_images() Dict
+        +get_predictions() Dict
+        +get_is_classified() bool
+    }
+
+    class Preprocessing {
+        -CLAHE clahe
+        -int IMG_SIZE
+        +process_image(bytes, String) ndarray
+        +process_all_scenarios(bytes) Dict
+        +prepare_for_model(ndarray) ndarray
+        +plot_histogram(ndarray, String) Figure
+    }
+
+    class CLAHE {
+        -float clipLimit
+        -Tuple tileGridSize
+        +apply(ndarray) ndarray
+    }
+
+    class ModelKlasifikasi {
+        -String model_path
+        -Model model
+        +load_model(String) Model
+        +predict(ndarray) ndarray
+    }
+
+    class EfficientNetB0 {
+        -Tuple input_shape
+        -int num_classes
+        -String optimizer
+        -String loss_function
+        +predict(ndarray) ndarray
+        +evaluate(ndarray, ndarray) Dict
+        +save(String)
+    }
+
+    class CitraFundus {
+        -bytes image_bytes
+        -ndarray image_array
+        -String format
+        -int size
+        -Tuple dimensi
+        +read() bytes
+        +validate_format() bool
+        +validate_size() bool
+    }
+
+    class HasilKlasifikasi {
+        -String skenario
+        -String predicted_class
+        -float confidence
+        -ndarray probabilities
+        +get_predicted_class() String
+        +get_confidence() float
+        +get_probabilities() ndarray
+    }
+
+    class HasilPreprocessing {
+        -ndarray citra_asli
+        -ndarray citra_rgb
+        -ndarray citra_lab
+        -ndarray citra_ycbcr
+        +get_citra(String) ndarray
+    }
+
+    SistemKlasifikasiPenyakitMata "1" --> "1" SessionState : menggunakan
+    SistemKlasifikasiPenyakitMata "1" --> "1" Preprocessing : menggunakan
+    SistemKlasifikasiPenyakitMata "1" --> "3" ModelKlasifikasi : memuat
+    SistemKlasifikasiPenyakitMata "1" --> "1" CitraFundus : menerima
+    SistemKlasifikasiPenyakitMata "1" --> "3" HasilKlasifikasi : menghasilkan
+    Preprocessing "1" --> "1" CLAHE : menggunakan
+    Preprocessing "1" --> "1" HasilPreprocessing : menghasilkan
+    Preprocessing "1" --> "1" CitraFundus : memproses
+    ModelKlasifikasi "1" --> "1" EfficientNetB0 : merupakan
+    ModelKlasifikasi "1" --> "1" HasilKlasifikasi : menghasilkan
+    ModelKlasifikasi "1" --> "1" HasilPreprocessing : menerima input dari
